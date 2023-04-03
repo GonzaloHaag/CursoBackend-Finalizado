@@ -1,0 +1,236 @@
+Para correr un servicio con docker
+docker-compose up -d nombreServicio (estara en docker-compose.yml)
+
+Los volumenes en el docker-compose.yml sirven para darle persistencia a esos datos
+
+Explorando base de datos :
+
+docker-compose exec postgres bash (por terminal)
+root@8ce3f9465bfa:/# (saldra esto)
+root@8ce3f9465bfa:/# psql -h localhost -d my_store -U lalo (para ingresar)
+
+Con un motor grafico: pgAdmin
+
+La podemos correr con docker
+Luego correr docker-compose up -d pgadmin(nombre del servicio)
+
+Vamos a google y ponemos localhost:5050 y iniciamos sesion
+con los datos que le especificamos
+Voy a object y register server
+En host name/address va la Ip
+Para saber la ip debo ir a la terminal poner docker ps y Luego
+docker inspect (id de mi servicio)
+
+Para crear una tabla en el query Tool :
+CREATE TABLE tasks (
+id serial PRIMARY KEY,
+title VARCHAR (255) NOT NULL,
+completed boolean DEFAULT false
+)
+Y le damos run, pero aprenderemos a crearla desde codigo
+
+Integracion de node a postgres
+
+npm install pg(driver de node)
+Luego creamos carpeta de libs(librerias) y postgress.js
+para utilizar pg
+
+RECORDAR DARLE A SAVE DATAS
+
+Luego en v1/users me saldran las tareas que creamos
+
+--Manejando un pool
+
+Luego de poner las variables en .env debemos isntalar
+npm i dotenv
+
+ORM : Capa en nuestra app para poder manipular la base de datos con
+programacion orientada a objetos (la tabla desde codigo) con metodos
+
+Gracias a esto podremos pasar a base de datos mysql y postgres
+1)Sequelize --> Orm mas potente
+
+SIN ESTO NO PODREMOS CREAR LA TABLA CON CODIGO Y ESO, MUY IMPORTANTE
+
+
+
+npm i --save sequelize
+
+npm i --save pg-hstore
+
+Primer tabla con programacion orientada a obejetos !!!!!!
+
+MIGRACIONES.....
+
+Forma en la que se propagan cambios y la reflejan en la base de datos
+ES un sistema de control
+
+Ahora no tendremos q utlizar sync(). No se recomienda a nivel de produccion
+
+npm i sequelize-cli --save-dev (para migraciones)
+Crear un archivo .sequelizerc y configurar las carpetas correspondientes
+
+Luego en el package.json creamos los scripts que dice el profe con
+respecto a "migrations:generate..."
+"migrations:generate": "sequelize-cli migration:generate --name",
+    "migrations:run": "sequelize-cli db:migrate",
+    "migrations:revert": "sequelize-cli db:migrate:undo",
+    "migrations:delete": "sequelize-cli db:migrate:undo:all"
+
+npm run migrations:generate nombreMigracion --> Ese archivo lo
+manda a la carpeta migraciones
+En ese archivo me deja una estrucutra pero yo debo decirle que hacer
+Luego de modificar ese archivo de migracion, debo correr la migracion
+con npm run migrations:run y ahi crea la tabla de users vacia
+Esto tambien crea automaticamenteuna tabla llamada sequelizeMeta
+que ahi guarda todo el historial de migraciones
+
+Ahora con las migraciones podremos editar las tablas y todo con codigo
+
+Recordar q luego de agregar y modificar las migraciones debemos
+correr el comando npm run migrations:run
+
+RELACIONES 1 A 1
+
+Un cliente solo puede tener un usuario
+
+A ---> B
+
+Si queremos que la relacion quede en la entidad B utilizamos el
+metodo HasOne()
+Si queremos que la relacion quede en A
+metodo BelongsTo()
+Luego de crear una tabla, generar la migracion
+npm run migration:generate create-customers
+Y luego de modificarla:
+npm run migrations:run
+
+RELACIONES 1 A MUCHOS
+
+Por ejemplo las categorias y los productos
+Una categoria puede pertenecer a muchos productos, pero un producto
+solo puede pertenecer a una categoria
+
+Metodo hasMany() de sequelize (va en nuestra entidad debil:productos)
+
+Luego de crear modelos nuevos y todo eso, debemos ejecutar las migraciones
+npm run migrations:generate products
+Y LUEGO NPM RUN MIGRATIONS:RUN
+
+
+RELACIONES MUCHOS A MUCHOS :
+
+Un producto puede pertenecer a muchas ordenes de compra, y una
+orden de compra puede pertenecer a muchos productos
+
+En estos casos lo que pasa es que tenemos una tabla intermedia
+La tabla others seran las ordenes de compra
+
+Un producto puede pertenecer a muchas ordenes de compra, y una orden de compra puede tener muchos productos.
+
+Cuando se tiene una relación muchos a muchos, por detrás se tiene una tabla ternaria. En BD se usa una join table, una clase intermedia que conecta dos tablas con relación muchos a muchos.
+
+–
+
+Para este caso se va requerir la tabla orders (ordenes de compra), esta estará ligada a un cliente. La join table serian los items que estarán ligados a una orden y producto.
+
+La tabla order tiene que ser una relación uno a muchos ya que un cliente puede tener muchas ordenes y una orden un cliente.
+
+Para tener un anidamiento “más profundo”, se debe especificar de la siguiente manera en el servicio order.service.js (order → customer → user):
+
+Luego de crear los modelos y relaciones,generamos la migracion, la
+modificamos y le damos run
+
+SI me sale que una relacion no existe, es porque no hicimos la migracion,
+si no corremos la migracion, no existe la tabla...
+
+BelongsToMany() Para hacer una relacion de muchos a muchos
+Se soluciona con una tabla Ternaria
+
+Luego de crear cada modelo recordar generar migracion
+
+PAGINACION : limit y offset
+Limit = 2
+Offset = 0
+
+Limit es el numero de limite elementos que yo quiero que me traigan
+Offset : Empieza en 0, por lo q en el caso anterior me traeria 2 productos
+
+El limit se mantiene siempre, el que cambia es el offset
+En insomnia vamos a get products y establecemos en query la
+paginacion que yo quiera : SI pongo limit = 2 y offset en 0
+me mostrara solo los dos primeros productos
+
+Si quiero solo los primeros 5 productos: limit en 5 y offset en 0
+
+
+FILTRANDO PRECIOS :
+
+El enpoint para hacer consultas de precio o de limit-offset es en
+insomnia y en query(en el get products)
+Si pongo price 100 filtrara los que tengan el precio 100
+Ver como hacer deploy en vercel de toda mi base de datos(las migraciones
+daran error porque hay que indicarle que correr)
+
+Por eso debemos tener en cuenta las MIGRACIONES EN PRODUCCION:
+
+Lo mas recomendable es poner todas las migraciones en un solo archivo
+'use strict';
+const { DataTypes, Sequelize } = require('sequelize');
+const { USER_TABLE, UserSchema } = require('./../models/user.model')
+const { CUSTOMER_TABLE, CustomerSchema } = require('./../models/customer.model')
+const { CATEGORY_TABLE, CategorySchema } = require('./../models/category.model')
+const { PRODUCT_TABLE, ProductSchema } = require('./../models/product.model')
+const { ORDER_TABLE } = require('./../models/order.model')
+const { OrderProductSchema, ORDER_PRODUCT_TABLE } = require('./../models/order-product')
+
+
+
+module.exports = {
+  up: async (queryInterface) => {
+    await queryInterface.createTable(USER_TABLE, UserSchema);
+    await queryInterface.createTable(CUSTOMER_TABLE, CustomerSchema);
+    await queryInterface.createTable(CATEGORY_TABLE, CategorySchema);
+    await queryInterface.createTable(PRODUCT_TABLE, ProductSchema);
+    await queryInterface.createTable(ORDER_TABLE, {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: DataTypes.INTEGER
+      },
+      customerId: {
+        field: 'customer_id',
+        allowNull: false,
+        type: DataTypes.INTEGER,
+        references: {
+          model: CUSTOMER_TABLE,
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+          },
+      createdAt: {
+        allowNull: false,
+        type: DataTypes.DATE,
+        field: 'created_at',
+        defaultValue: Sequelize.NOW,
+        },
+
+    });
+    await queryInterface.createTable(ORDER_PRODUCT_TABLE, OrderProductSchema);
+
+  },
+
+  down: async (queryInterface) => {
+    await queryInterface.dropTable(USER_TABLE)
+    await queryInterface.dropTable(CUSTOMER_TABLE)
+    await queryInterface.dropTable(PRODUCT_TABLE)
+    await queryInterface.dropTable(CATEGORY_TABLE)
+    await queryInterface.dropTable(ORDER_TABLE)
+    await queryInterface.dropTable(ORDER_PRODUCT_TABLE)
+  }
+};
+
+Toca repetir codigo, si no dara el error hacer deploy
+
